@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IELTS Vocab Gym - Minimalist Dictation Practice</title>
+  
+  <!-- Premium Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#f2fcf9',
+              100: '#e6faf4',
+              200: '#c0f3e3',
+              300: '#9aecc1',
+              400: '#4edba1',
+              500: '#14b8a6',
+              600: '#0d9488',
+              700: '#0f766e',
+              800: '#115e59',
+              900: '#134e4a',
+            }
+          },
+          animation: {
+            'pulse-subtle': 'pulseSubtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            'bounce-soft': 'bounceSoft 1.5s infinite',
+            'shake': 'shake 0.4s ease-in-out',
+            'fade-in': 'fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+          },
+          keyframes: {
+            pulseSubtle: {
+              '0%, 100%': { transform: 'scale(1)', opacity: '1' },
+              '50%': { transform: 'scale(1.03)', opacity: '0.9' },
+            },
+            bounceSoft: {
+              '0%, 100%': { transform: 'translateY(0)', animationTimingFunction: 'cubic-bezier(0.8,0,1,1)' },
+              '50%': { transform: 'translateY(-6px)', animationTimingFunction: 'cubic-bezier(0,0,0.2,1)' },
+            },
+            shake: {
+              '0%, 100%': { transform: 'translateX(0)' },
+              '20%, 60%': { transform: 'translateX(-4px)' },
+              '40%, 80%': { transform: 'translateX(4px)' },
+            },
+            fadeIn: {
+              '0%': { opacity: '0', transform: 'translateY(8px)' },
+              '100%': { opacity: '1', transform: 'translateY(0)' },
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Clean, Decoupled Custom CSS -->
+  <link rel="stylesheet" href="app.css">
+</head>
+<body class="h-full flex flex-col justify-between overflow-x-hidden">
+
+  <!-- HEADER -->
+  <header class="border-b border-zinc-900 bg-zinc-950/50 backdrop-blur-md sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="h-10 w-10 rounded-xl bg-gradient-to-tr from-brand-500 to-emerald-500 flex items-center justify-center shadow-lg shadow-brand-500/20">
+          <svg class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072M18.364 5.636a9 9 0 010 12.728M12 18.75V5.25L7.75 9.5H4.5v5h3.25L12 18.75z" />
+          </svg>
+        </div>
+        <div>
+          <h1 class="text-xl font-bold tracking-tight text-zinc-100 flex items-center gap-1.5">
+            <span>IELTS Vocab Gym</span>
+            <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-brand-500/10 text-brand-400 border border-brand-500/25">Dictation</span>
+          </h1>
+          <p class="text-xs text-zinc-500">Master 3800 standard vocabulary through auditory stimulation</p>
+        </div>
+      </div>
+
+      <!-- Quick Wordlist Summary Ring -->
+      <div id="header-stats" class="hidden sm:flex items-center gap-6">
+        <div class="text-right">
+          <p class="text-xs text-zinc-500 font-medium">Active Vocabulary List</p>
+          <p id="header-filename" class="text-sm font-semibold text-zinc-300 truncate max-w-[200px]"></p>
+        </div>
+        <div class="flex items-center gap-2 border-l border-zinc-800 pl-6">
+          <div class="text-center">
+            <div id="stat-count-mastered" class="text-sm font-bold text-emerald-400">0</div>
+            <div class="text-[10px] uppercase tracking-wider text-zinc-500">Mastered</div>
+          </div>
+          <div class="h-6 border-r border-zinc-900 mx-1"></div>
+          <div class="text-center">
+            <div id="stat-count-unfamiliar" class="text-sm font-bold text-amber-400">0</div>
+            <div class="text-[10px] uppercase tracking-wider text-zinc-500">Unfamiliar</div>
+          </div>
+          <div class="h-6 border-r border-zinc-900 mx-1"></div>
+          <div class="text-center">
+            <div id="stat-count-unlearned" class="text-sm font-bold text-zinc-400">0</div>
+            <div class="text-[10px] uppercase tracking-wider text-zinc-500">Unlearned</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CANVAS -->
+  <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col justify-start">
+    
+    <!-- 1. DASHBOARD / PRE-LEARNING VIEW -->
+    <div id="dashboard-view" class="space-y-8 animate-fade-in">
+      
+      <!-- Top Overview Panel -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        <!-- Left Panel: Data Source & List Vault -->
+        <div class="lg:col-span-5 flex flex-col space-y-6">
+          <div class="glass-card rounded-2xl p-6 flex flex-col h-full justify-between">
+            <div class="space-y-6">
+              <div>
+                <h2 class="text-lg font-bold text-zinc-100">Vocabulary Source</h2>
+                <p class="text-sm text-zinc-400 mt-0.5">Upload a workbook or pick from your vault</p>
+              </div>
+
+              <!-- Upload Drag & Drop Zone -->
+              <div id="dropzone" class="border border-dashed border-zinc-800 hover:border-brand-500/50 rounded-xl p-6 text-center cursor-pointer transition-all duration-300 bg-zinc-900/30 group relative overflow-hidden">
+                <div class="absolute -inset-px bg-gradient-to-r from-brand-500 to-emerald-500 rounded-xl opacity-0 group-hover:opacity-5 transition-opacity duration-500 blur"></div>
+                <input type="file" id="excel-file-input" accept=".xlsx,.xls" class="hidden" />
+                
+                <div class="flex flex-col items-center justify-center space-y-3">
+                  <div class="p-3 bg-zinc-800/80 rounded-xl text-zinc-400 group-hover:text-brand-400 group-hover:scale-105 transition-all duration-300">
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p class="text-sm font-semibold text-zinc-200">Load Excel File</p>
+                    <p class="text-xs text-zinc-500 mt-0.5">Drag-and-drop or click to browse</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- File Select dropdown -->
+              <div class="space-y-2">
+                <label for="list-selector" class="block text-xs font-semibold uppercase tracking-wider text-zinc-500">Active Vocabulary Vault</label>
+                <div class="flex gap-2">
+                  <select id="list-selector" class="input-premium py-2.5 text-sm flex-grow">
+                    <option value="" disabled selected>No lists loaded in database</option>
+                  </select>
+                  <button id="btn-delete-list" class="btn-secondary px-3 text-rose-400 hover:text-rose-300 hover:bg-rose-950/20 border-zinc-800/80" title="Delete current list">
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- List Progress Ring metrics -->
+            <div id="list-stats-card" class="mt-6 pt-6 border-t border-zinc-900 hidden space-y-4">
+              <h3 class="text-xs font-semibold uppercase tracking-wider text-zinc-500">List Mastery Statistics</h3>
+              <div class="flex items-center gap-4">
+                <div class="relative flex items-center justify-center">
+                  <svg class="w-16 h-16 transform -rotate-90">
+                    <circle cx="32" cy="32" r="28" stroke="currentColor" stroke-width="5" class="text-zinc-800" fill="transparent" />
+                    <circle id="mastery-progress-circle" cx="32" cy="32" r="28" stroke="currentColor" stroke-width="5" class="text-brand-500" fill="transparent" stroke-dasharray="175" stroke-dashoffset="175" stroke-linecap="round" />
+                  </svg>
+                  <span id="mastery-progress-percent" class="absolute text-xs font-bold text-zinc-100">0%</span>
+                </div>
+                <div class="flex-grow space-y-1">
+                  <div class="flex justify-between items-center text-xs">
+                    <span class="text-zinc-400">Total Database Words</span>
+                    <span id="total-words-metric" class="font-bold text-zinc-200">0</span>
+                  </div>
+                  <div class="w-full bg-zinc-900 rounded-full h-1.5 overflow-hidden flex">
+                    <div id="bar-mastered" class="bg-emerald-500 h-full" style="width: 0%"></div>
+                    <div id="bar-unfamiliar" class="bg-amber-500 h-full" style="width: 0%"></div>
+                    <div id="bar-unlearned" class="bg-zinc-700 h-full" style="width: 0%"></div>
+                  </div>
+                  <div class="flex justify-between items-center text-[10px] text-zinc-500 pt-0.5">
+                    <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Mastered</span>
+                    <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>Unfamiliar</span>
+                    <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-zinc-500"></span>Unlearned</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Right Panel: Session Workout Configuration -->
+        <div class="lg:col-span-7">
+          <div class="glass-card rounded-2xl p-6 flex flex-col justify-between h-full space-y-6">
+            <div>
+              <h2 class="text-lg font-bold text-zinc-100">Configure Workout Session</h2>
+              <p class="text-sm text-zinc-400 mt-0.5">Tailor the dictation queue for optimal review</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              
+              <!-- Session Filters -->
+              <div class="space-y-4">
+                <h3 class="text-xs font-semibold uppercase tracking-wider text-zinc-500">Target Filters</h3>
+                <div class="space-y-3">
+                  <label class="flex items-start gap-3 cursor-pointer group">
+                    <input type="radio" name="session-filter" value="all" checked class="mt-1 accent-brand-500 h-4 w-4 bg-zinc-900 border-zinc-800 focus:ring-brand-500" />
+                    <div>
+                      <span class="text-sm font-semibold text-zinc-200 group-hover:text-zinc-100 transition-colors">All Vocabulary Words</span>
+                      <p class="text-xs text-zinc-500">Include every active word in your list</p>
+                    </div>
+                  </label>
+                  <label class="flex items-start gap-3 cursor-pointer group">
+                    <input type="radio" name="session-filter" value="unfamiliar" class="mt-1 accent-brand-500 h-4 w-4 bg-zinc-900 border-zinc-800 focus:ring-brand-500" />
+                    <div>
+                      <span class="text-sm font-semibold text-amber-400 group-hover:text-amber-300 transition-colors flex items-center gap-1.5">
+                        Only Unfamiliar Words
+                        <span id="badge-unfamiliar-count" class="text-[10px] bg-amber-500/10 border border-amber-500/20 text-amber-400 px-1.5 py-0.2 rounded-full">0</span>
+                      </span>
+                      <p class="text-xs text-zinc-500">Focus strictly on hard, flagged words</p>
+                    </div>
+                  </label>
+                  <label class="flex items-start gap-3 cursor-pointer group">
+                    <input type="radio" name="session-filter" value="low-accuracy" class="mt-1 accent-brand-500 h-4 w-4 bg-zinc-900 border-zinc-800 focus:ring-brand-500" />
+                    <div>
+                      <span class="text-sm font-semibold text-rose-400 group-hover:text-rose-300 transition-colors flex items-center gap-1.5">
+                        Low Accuracy Words
+                      </span>
+                      <div class="flex items-center gap-2 mt-1">
+                        <span class="text-xs text-zinc-500">Accuracy rate lower than:</span>
+                        <div class="flex items-center gap-1 bg-zinc-900 border border-zinc-800 rounded-lg px-2 py-0.5 w-16">
+                          <input type="number" id="accuracy-threshold" value="60" min="1" max="100" class="w-8 bg-transparent text-xs text-center focus:outline-none font-bold text-zinc-200" />
+                          <span class="text-[10px] text-zinc-500">%</span>
+                        </div>
+                      </div>
+                    </div>
+                  </label>
+                  <label class="flex items-start gap-3 cursor-pointer group">
+                    <input type="radio" name="session-filter" value="unlearned" class="mt-1 accent-brand-500 h-4 w-4 bg-zinc-900 border-zinc-800 focus:ring-brand-500" />
+                    <div>
+                      <span class="text-sm font-semibold text-zinc-300 group-hover:text-zinc-200 transition-colors flex items-center gap-1.5">
+                        Unlearned Words
+                      </span>
+                      <p class="text-xs text-zinc-500">Words yet to be attempted or studied</p>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Setup inputs & Speech panel -->
+              <div class="space-y-4">
+                
+                <!-- Speed timer setting -->
+                <div class="space-y-2">
+                  <label for="session-timer" class="block text-xs font-semibold uppercase tracking-wider text-zinc-500">Time Limit per Word</label>
+                  <div class="relative">
+                    <input type="number" id="session-timer" placeholder="Infinite" min="3" max="120" class="input-premium py-2.5 text-sm pr-12" />
+                    <span class="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-semibold text-zinc-500 uppercase">Secs</span>
+                  </div>
+                  <p class="text-[11px] text-zinc-500">Seconds to spell each word. Leave blank for endless time.</p>
+                </div>
+
+                <!-- Session size setting -->
+                <div class="space-y-2">
+                  <label for="session-size" class="block text-xs font-semibold uppercase tracking-wider text-zinc-500">Words per Session</label>
+                  <div class="relative">
+                    <input type="number" id="session-size" value="20" placeholder="All matching" min="1" class="input-premium py-2.5 text-sm pr-16" />
+                    <span class="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-semibold text-zinc-500 uppercase">Words</span>
+                  </div>
+                  <p class="text-[11px] text-zinc-500">Number of words to test. Leave blank to queue all matching words.</p>
+                </div>
+
+                <!-- Voice Selection & Audio Speed -->
+                <div class="space-y-3 bg-zinc-900/30 border border-zinc-800/80 p-3 rounded-xl">
+                  <div class="flex items-center justify-between">
+                    <h4 class="text-xs font-semibold uppercase tracking-wider text-zinc-400">Audio Profile</h4>
+                    <button id="btn-test-audio" class="text-[11px] text-brand-400 hover:text-brand-300 flex items-center gap-1">
+                      <svg class="h-3 w-3" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
+                      Test Speech
+                    </button>
+                  </div>
+                  
+                  <div class="space-y-2">
+                    <select id="voice-selector" class="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-1.5 text-xs text-zinc-300 focus:outline-none focus:ring-1 focus:ring-brand-500">
+                      <!-- Dynamically loaded -->
+                    </select>
+                  </div>
+
+                  <div class="space-y-1">
+                    <div class="flex justify-between text-[11px] text-zinc-500">
+                      <span>Speech Rate</span>
+                      <span id="rate-value" class="font-bold text-zinc-300">1.0x</span>
+                    </div>
+                    <input type="range" id="voice-rate" min="0.5" max="1.8" step="0.1" value="1.0" class="w-full accent-brand-500 bg-zinc-800 h-1 rounded-lg cursor-pointer" />
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+            <!-- Start Session Button -->
+            <button id="btn-start-session" disabled class="btn-primary w-full py-4 text-base tracking-wide flex items-center justify-center opacity-50 cursor-not-allowed">
+              <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span>Initialize Dictation Gym</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- KEYBOARD CHEATSHEET QUICK PANEL -->
+      <div class="glass-card rounded-2xl p-4 flex flex-wrap gap-6 items-center justify-around border-zinc-800/40 text-xs text-zinc-400 bg-zinc-950/20">
+        <span class="font-semibold text-zinc-300 flex items-center gap-1.5">
+          <svg class="h-4 w-4 text-brand-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" /></svg>
+          Keyboard Hotkeys:
+        </span>
+        <div class="flex items-center gap-2">
+          <kbd class="bg-zinc-800 border border-zinc-700 text-zinc-300 px-2 py-0.5 rounded font-mono font-bold text-[10px]">Enter</kbd>
+          <span>Confirm answer / Next word</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <kbd class="bg-zinc-800 border border-zinc-700 text-zinc-300 px-2 py-0.5 rounded font-mono font-bold text-[10px]">`</kbd>
+          <span>Mark as Unfamiliar (backtick key)</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <kbd class="bg-zinc-800 border border-zinc-700 text-zinc-300 px-2 py-0.5 rounded font-mono font-bold text-[10px]">Ctrl + Space</kbd>
+          <span>Replay Pronunciation Audio</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 2. CORE DICTATION VIEW -->
+    <div id="dictation-view" class="hidden max-w-2xl w-full mx-auto animate-fade-in space-y-6">
+      
+      <div class="flex justify-between items-center bg-zinc-900/30 border border-zinc-800/50 rounded-xl px-4 py-3">
+        <button id="btn-quit-session" class="text-xs font-semibold text-zinc-400 hover:text-zinc-200 flex items-center gap-1.5 transition-colors">
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          Exit Gym
+        </button>
+
+        <div class="flex items-center gap-4">
+          <div id="streak-indicator" class="hidden items-center gap-1 px-2.5 py-1 bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-bold rounded-lg transition-all animate-pulse-subtle">
+            <span>🔥</span>
+            <span>Streak: <span id="streak-count">0</span></span>
+          </div>
+          <div class="text-xs text-zinc-400 font-semibold bg-zinc-800/50 px-3 py-1 rounded-lg border border-zinc-800">
+            Progress: <span id="current-word-index" class="text-zinc-100 font-bold">1</span>/<span id="total-session-words" class="text-zinc-400">10</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Workout Card -->
+      <div id="dictation-card" class="glass-card rounded-3xl p-8 relative overflow-hidden transition-all duration-300">
+        <div class="absolute top-0 left-0 right-0 h-1.5 bg-zinc-900">
+          <div id="session-progress-bar" class="h-full bg-gradient-to-r from-brand-500 to-emerald-500 transition-all duration-300" style="width: 10%"></div>
+        </div>
+
+        <div class="flex flex-col items-center py-6 space-y-8">
+          <div class="relative group">
+            <button id="btn-dictation-pronounce" class="h-28 w-28 rounded-full bg-zinc-900 border-2 border-zinc-800 hover:border-brand-500 text-zinc-400 hover:text-brand-400 flex items-center justify-center transition-all duration-300 transform active:scale-95 shadow-2xl relative">
+              <div class="absolute inset-0 rounded-full bg-brand-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-md"></div>
+              <svg class="h-10 w-10 transition-transform group-hover:scale-105" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072M18.364 5.636a9 9 0 010 12.728M12 18.75V5.25L7.75 9.5H4.5v5h3.25L12 18.75z" />
+              </svg>
+            </button>
+            <div class="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[10px] uppercase font-bold tracking-widest text-zinc-500 group-hover:text-brand-400 transition-colors whitespace-nowrap">
+              Ctrl+Space to Replay
+            </div>
+          </div>
+
+          <div id="unfamiliar-badge" class="opacity-0 scale-95 transition-all duration-300 flex items-center gap-1.5 px-3 py-1 bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-bold rounded-full">
+            <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping"></span>
+            <span>Flagged: Unfamiliar</span>
+          </div>
+
+          <!-- Input Feedback Area -->
+          <div class="w-full max-w-md relative space-y-4">
+            <div id="feedback-ring" class="relative rounded-2xl transition-all duration-300 p-0.5 bg-zinc-800">
+              <input type="text" id="dictation-input" autocomplete="off" spellcheck="false" placeholder="Type spelling and press Enter..." class="w-full text-center bg-zinc-950 text-2xl font-bold font-mono py-4 px-6 rounded-2xl focus:outline-none text-zinc-100 tracking-wider placeholder-zinc-700" />
+              <div id="word-countdown" class="hidden absolute right-4 top-1/2 -translate-y-1/2 px-2.5 py-1 bg-brand-500/10 border border-brand-500/20 text-brand-400 font-bold rounded-lg text-sm font-mono transition-colors">
+                10s
+              </div>
+            </div>
+            <div class="flex justify-between items-center text-[10px] text-zinc-500 px-1 font-semibold uppercase tracking-wider">
+              <span>Press <span class="bg-zinc-900 border border-zinc-800 px-1.5 py-0.5 rounded text-zinc-400 font-mono font-bold">`</span> key to flag as unfamiliar</span>
+              <span>Double-Enter on wrong to skip</span>
+            </div>
+          </div>
+
+          <!-- REVEALED INFO DRAWER -->
+          <div id="reveal-drawer" class="w-full border-t border-zinc-900 pt-8 mt-4 hidden space-y-6 animate-fade-in">
+            <div class="text-center space-y-3">
+              <div class="space-y-1">
+                <span class="text-xs uppercase tracking-wider text-rose-400 font-bold">Spelling Answer:</span>
+                <h3 id="revealed-word" class="text-3xl font-extrabold font-mono tracking-widest text-emerald-400 select-all"></h3>
+              </div>
+
+              <div id="revealed-phonetics" class="flex justify-center gap-4 text-xs font-mono text-zinc-400">
+                <span id="revealed-phonetic-br" class="bg-zinc-900 px-2.5 py-1 border border-zinc-800/80 rounded-lg"></span>
+                <span id="revealed-phonetic-us" class="bg-zinc-900 px-2.5 py-1 border border-zinc-800/80 rounded-lg"></span>
+              </div>
+
+              <div class="bg-zinc-900/60 border border-zinc-850 p-4 rounded-xl max-w-md mx-auto">
+                <span class="block text-[10px] uppercase tracking-widest text-zinc-500 font-semibold mb-1">Translation & Meaning</span>
+                <p id="revealed-definition" class="text-sm font-medium text-zinc-200 leading-relaxed"></p>
+              </div>
+
+              <div id="press-enter-hint" class="text-xs text-brand-400 font-bold tracking-widest uppercase animate-bounce-soft pt-2">
+                Press Enter to advance
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. POST-SESSION REPORT VIEW -->
+    <div id="results-view" class="hidden max-w-4xl w-full mx-auto animate-fade-in space-y-8">
+      
+      <!-- Top Overview Summary Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div class="glass-card rounded-2xl p-5 flex flex-col items-center text-center justify-between border-zinc-800/50">
+          <span class="text-[10px] uppercase font-bold text-zinc-500 tracking-wider">Overall Accuracy</span>
+          <h3 id="result-stat-accuracy" class="text-3xl font-black text-brand-400 my-2">0%</h3>
+          <span class="text-xs text-zinc-500 font-medium">Spelling correctness</span>
+        </div>
+        <div class="glass-card rounded-2xl p-5 flex flex-col items-center text-center justify-between border-zinc-800/50">
+          <span class="text-[10px] uppercase font-bold text-zinc-500 tracking-wider">Completed Queue</span>
+          <h3 id="result-stat-count" class="text-3xl font-black text-zinc-200 my-2">0/0</h3>
+          <span class="text-xs text-zinc-500 font-medium">Vocabulary words tested</span>
+        </div>
+        <div class="glass-card rounded-2xl p-5 flex flex-col items-center text-center justify-between border-zinc-800/50">
+          <span class="text-[10px] uppercase font-bold text-zinc-500 tracking-wider">Avg Speed / Word</span>
+          <h3 id="result-stat-speed" class="text-3xl font-black text-zinc-200 my-2">0.0s</h3>
+          <span class="text-xs text-zinc-500 font-medium">Time spent typing</span>
+        </div>
+        <div class="glass-card rounded-2xl p-5 flex flex-col items-center text-center justify-between border-zinc-800/50">
+          <span class="text-[10px] uppercase font-bold text-zinc-500 tracking-wider">Best Streak</span>
+          <h3 id="result-stat-streak" class="text-3xl font-black text-amber-400 my-2">🔥 0</h3>
+          <span class="text-xs text-zinc-500 font-medium">Max consecutive correct</span>
+        </div>
+      </div>
+
+      <!-- Action Panel -->
+      <div class="flex gap-4 items-center justify-center">
+        <button id="btn-replay-session" class="btn-primary px-8">
+          <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 8H18.5" /></svg>
+          Start Another Session
+        </button>
+        <button id="btn-results-home" class="btn-secondary px-6">
+          <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
+          Return to Dashboard
+        </button>
+      </div>
+
+      <!-- Tested Words List Panel -->
+      <div class="glass-card rounded-2xl p-6 space-y-4">
+        <div class="flex justify-between items-center">
+          <div>
+            <h3 class="text-base font-bold text-zinc-200">Session Breakdown</h3>
+            <p class="text-xs text-zinc-500 mt-0.5">Comprehensive audit trail of tested vocabulary</p>
+          </div>
+          <div class="relative w-64">
+            <input type="text" id="tested-search" placeholder="Search spelling/translation..." class="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-brand-500 text-zinc-200" />
+          </div>
+        </div>
+
+        <div id="tested-words-list" class="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[400px] overflow-y-auto pr-1">
+          <!-- Dynamically populated tested cards -->
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 4. WORD BANK INSPECTION TABLE -->
+    <div id="word-ledger-container" class="mt-12 space-y-6">
+      <div class="glass-card rounded-2xl p-6 space-y-6">
+        
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h2 class="text-lg font-bold text-zinc-100">Vocabulary Ledger</h2>
+            <p class="text-sm text-zinc-400 mt-0.5">Explore, search, filter, and manually curate your vocabulary database</p>
+          </div>
+
+          <div class="flex flex-wrap gap-3 items-center">
+            <div class="relative min-w-[200px]">
+              <input type="text" id="ledger-search" placeholder="Search English spelling/Chinese translation..." class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500 text-zinc-200" />
+            </div>
+
+            <select id="ledger-status-filter" class="bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500 text-zinc-300">
+              <option value="all">All Statuses</option>
+              <option value="unlearned">Unlearned</option>
+              <option value="unfamiliar">Unfamiliar</option>
+              <option value="mastered">Mastered</option>
+            </select>
+
+            <button id="btn-export-json" class="btn-secondary py-2 text-xs" title="Export vault progress & session history as unified JSON">
+              <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+              Export
+            </button>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto rounded-xl border border-zinc-900">
+          <table class="min-w-full divide-y divide-zinc-900 text-left text-sm text-zinc-300">
+            <thead class="bg-zinc-900/50 text-xs font-semibold uppercase tracking-wider text-zinc-500">
+              <tr>
+                <th scope="col" class="px-6 py-4">Vocabulary Word</th>
+                <th scope="col" class="px-6 py-4">Phonetics</th>
+                <th scope="col" class="px-6 py-4">Translation (Meaning)</th>
+                <th scope="col" class="px-6 py-4 text-center">Attempts</th>
+                <th scope="col" class="px-6 py-4 text-center">Accuracy</th>
+                <th scope="col" class="px-6 py-4 text-right">Mastery State</th>
+              </tr>
+            </thead>
+            <tbody id="ledger-table-body" class="divide-y divide-zinc-900 bg-zinc-950/20">
+              <tr>
+                <td colspan="6" class="text-center py-12 text-zinc-500 font-medium">No active vocabulary list is selected. Upload an Excel list above to populate.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div id="ledger-pagination" class="hidden flex items-center justify-between border-t border-zinc-900 pt-4 text-xs">
+          <div class="text-zinc-500">
+            Showing <span id="ledger-page-start" class="font-bold text-zinc-300">1</span> to <span id="ledger-page-end" class="font-bold text-zinc-300">15</span> of <span id="ledger-total-rows" class="font-bold text-zinc-300">3800</span> records
+          </div>
+          <div class="flex gap-2">
+            <button id="btn-ledger-prev" class="btn-secondary py-1.5 px-3 text-xs disabled:opacity-40 disabled:cursor-not-allowed">Previous</button>
+            <button id="btn-ledger-next" class="btn-secondary py-1.5 px-3 text-xs disabled:opacity-40 disabled:cursor-not-allowed">Next</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="border-t border-zinc-900 bg-zinc-950/20 py-6 mt-12 text-center text-xs text-zinc-600 font-medium">
+    <div class="max-w-7xl mx-auto px-4">
+      <p>© 2026 IELTS Vocab Gym. Standard dictation training suite for vocabulary building.</p>
+    </div>
+  </footer>
+
+  <!-- DECOUPLED APPLICATION CORE ENGINE (Option A Sequencing) -->
+  <!-- SheetJS CDN Library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+  <!-- Sequenced App Scripts -->
+  <script src="js/state.js"></script>
+  <script src="js/sfx.js"></script>
+  <script src="js/speech.js"></script>
+  <script src="js/excel.js"></script>
+  <script src="js/dictation.js"></script>
+  <script src="js/ledger.js"></script>
+  <script src="js/main.js"></script>
+
+</body>
+</html>
