@@ -72,39 +72,55 @@
 
   <!-- HEADER -->
   <header class="border-b border-zinc-900 bg-zinc-950/50 backdrop-blur-md sticky top-0 z-40">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-      <div class="flex items-center space-x-3">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-4">
+      <div class="flex items-center space-x-3 flex-shrink-0">
         <div class="h-10 w-10 rounded-xl bg-gradient-to-tr from-brand-500 to-emerald-500 flex items-center justify-center shadow-lg shadow-brand-500/20">
           <svg class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
             <path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072M18.364 5.636a9 9 0 010 12.728M12 18.75V5.25L7.75 9.5H4.5v5h3.25L12 18.75z" />
           </svg>
         </div>
-        <div>
+        <div class="hidden xl:block">
           <h1 class="text-xl font-bold tracking-tight text-zinc-100 flex items-center gap-1.5">
-            <span>IELTS Vocab Gym</span>
+            <span>English Vocab Gym</span>
             <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-brand-500/10 text-brand-400 border border-brand-500/25">Dictation</span>
           </h1>
-          <p class="text-xs text-zinc-500">Master 3800 standard vocabulary through auditory stimulation</p>
+          <p class="text-xs text-zinc-500">Master standard vocabulary through stimulation</p>
+        </div>
+      </div>
+
+      <!-- Central Dictionary Search -->
+      <div id="header-search-wrapper" class="flex-1 max-w-lg relative">
+        <div class="relative">
+          <svg class="h-5 w-5 text-zinc-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <input type="text" id="header-dict-search" placeholder="Search 30,000+ words…"
+            class="w-full bg-zinc-900/80 border border-zinc-800 rounded-xl px-11 py-2.5 text-sm text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 focus:bg-zinc-900 transition-all duration-200" />
+          <kbd class="hidden sm:inline absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-mono text-zinc-500 bg-zinc-800 px-1.5 py-0.5 rounded">Ctrl+K</kbd>
+        </div>
+        <!-- Search results dropdown -->
+        <div id="header-dict-results" class="hidden absolute left-0 right-0 top-full mt-1.5 bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl shadow-black/50 overflow-hidden z-50 max-h-80 overflow-y-auto">
+          <p class="text-zinc-500 text-xs text-center py-6">Type to search the dictionary</p>
         </div>
       </div>
 
       <!-- Quick Wordlist Summary Ring -->
-      <div id="header-stats" class="hidden sm:flex items-center gap-6">
-        <div class="text-right">
-          <p class="text-xs text-zinc-500 font-medium">Active Vocabulary List</p>
-          <p id="header-filename" class="text-sm font-semibold text-zinc-300 truncate max-w-[200px]"></p>
+      <div id="header-stats" class="hidden sm:flex items-center gap-4 flex-shrink-0">
+        <div class="text-right hidden lg:block">
+          <p class="text-xs text-zinc-500 font-medium">Active List</p>
+          <p id="header-filename" class="text-sm font-semibold text-zinc-300 truncate max-w-[140px]"></p>
         </div>
-        <div class="flex items-center gap-2 border-l border-zinc-800 pl-6">
+        <div class="flex items-center gap-2 border-l border-zinc-800 pl-4">
           <div class="text-center">
             <div id="stat-count-mastered" class="text-sm font-bold text-emerald-400">0</div>
             <div class="text-[10px] uppercase tracking-wider text-zinc-500">Mastered</div>
           </div>
-          <div class="h-6 border-r border-zinc-900 mx-1"></div>
+          <div class="h-6 border-r border-zinc-900 mx-0.5"></div>
           <div class="text-center">
             <div id="stat-count-unfamiliar" class="text-sm font-bold text-amber-400">0</div>
             <div class="text-[10px] uppercase tracking-wider text-zinc-500">Unfamiliar</div>
           </div>
-          <div class="h-6 border-r border-zinc-900 mx-1"></div>
+          <div class="h-6 border-r border-zinc-900 mx-0.5"></div>
           <div class="text-center">
             <div id="stat-count-unlearned" class="text-sm font-bold text-zinc-400">0</div>
             <div class="text-[10px] uppercase tracking-wider text-zinc-500">Unlearned</div>
@@ -173,7 +189,7 @@
                 <div class="relative flex items-center justify-center">
                   <svg class="w-16 h-16 transform -rotate-90">
                     <circle cx="32" cy="32" r="28" stroke="currentColor" stroke-width="5" class="text-zinc-800" fill="transparent" />
-                    <circle id="mastery-progress-circle" cx="32" cy="32" r="28" stroke="currentColor" stroke-width="5" class="text-brand-500" fill="transparent" stroke-dasharray="175" stroke-dashoffset="175" stroke-linecap="round" />
+                    <circle id="mastery-progress-circle" cx="32" cy="32" r="28" stroke="currentColor" stroke-width="5" class="text-brand-500" fill="transparent" stroke-dasharray="176" stroke-dashoffset="176" stroke-linecap="round" />
                   </svg>
                   <span id="mastery-progress-percent" class="absolute text-xs font-bold text-zinc-100">0%</span>
                 </div>
@@ -203,7 +219,7 @@
         <div class="lg:col-span-7">
           <div class="glass-card rounded-2xl p-6 flex flex-col justify-between h-full space-y-6">
             <div>
-              <h2 class="text-lg font-bold text-zinc-100">Configure Workout Session</h2>
+              <h2 class="text-lg font-bold text-zinc-100">Configure Dictation Workout Session</h2>
               <p class="text-sm text-zinc-400 mt-0.5">Tailor the dictation queue for optimal review</p>
             </div>
 
@@ -399,15 +415,19 @@
             </div>
             <div class="flex justify-between items-center text-[10px] text-zinc-500 px-1 font-semibold uppercase tracking-wider">
               <span>Press <span class="bg-zinc-900 border border-zinc-800 px-1.5 py-0.5 rounded text-zinc-400 font-mono font-bold">`</span> key to flag as unfamiliar</span>
-              <span>Double-Enter on wrong to skip</span>
+              <span>Enter again to advance, <span class="bg-zinc-900 border border-zinc-800 px-1.5 py-0.5 rounded text-zinc-400 font-mono font-bold">`</span> to mark unfamiliar</span>
             </div>
           </div>
 
           <!-- REVEALED INFO DRAWER -->
           <div id="reveal-drawer" class="w-full border-t border-zinc-900 pt-8 mt-4 hidden space-y-6 animate-fade-in">
             <div class="text-center space-y-3">
+              <!-- Result badge -->
+              <div id="reveal-result-badge" class="flex justify-center">
+                <span id="reveal-result-text" class="text-xs font-black uppercase tracking-widest px-4 py-1.5 rounded-full"></span>
+              </div>
               <div class="space-y-1">
-                <span class="text-xs uppercase tracking-wider text-rose-400 font-bold">Spelling Answer:</span>
+                <span class="text-xs uppercase tracking-wider text-zinc-500 font-bold">Correct Spelling</span>
                 <h3 id="revealed-word" class="text-3xl font-extrabold font-mono tracking-widest text-emerald-400 select-all"></h3>
               </div>
 
@@ -515,6 +535,14 @@
               <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
               Export
             </button>
+            <button id="btn-export-share" class="btn-secondary py-2 text-xs" title="Export current list for sharing via QR code">
+              <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" /></svg>
+              Share
+            </button>
+            <button id="btn-import-share" class="btn-secondary py-2 text-xs" title="Import list from shared QR code or text">
+              <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4m0 16h.01" /></svg>
+              Import
+            </button>
           </div>
         </div>
 
@@ -555,24 +583,46 @@
 
   <!-- FOOTER -->
   <footer class="border-t border-zinc-900 bg-zinc-950/20 py-6 mt-12 text-center text-xs text-zinc-600 font-medium">
-    <div class="max-w-7xl mx-auto px-4">
+    <div class="max-w-7xl mx-auto px-4 flex items-center justify-center gap-4">
       <p>© 2026 IELTS Vocab Gym. Standard dictation training suite for vocabulary building.</p>
-      <a href="https://github.com/Quicksilver-Jacob/vocabGym/blob/main/%E9%9B%85%E6%80%9D%E6%A0%87%E5%87%86%E8%AF%8D%E6%B1%873800%EF%BC%88%E7%AC%AC%E4%BA%8C%E7%89%88%EF%BC%89.xlsx">Example Vocab List HERE !!!</a>
+
     </div>
   </footer>
 
   <!-- DECOUPLED APPLICATION CORE ENGINE (Option A Sequencing) -->
   <!-- SheetJS CDN Library -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <!-- qrcode.js CDN Library -->
+  <script src="https://cdn.jsdelivr.net/npm/davidshimjs-qrcodejs@0.0.2/qrcode.min.js"></script>
 
   <!-- Sequenced App Scripts -->
-  <script src="js/state.js"></script>
-  <script src="js/sfx.js"></script>
-  <script src="js/speech.js"></script>
-  <script src="js/excel.js"></script>
-  <script src="js/dictation.js"></script>
-  <script src="js/ledger.js"></script>
-  <script src="js/main.js"></script>
+  <script src="js/dictionary.js"></script>
+  <script src="js/bundle.js"></script>
+  <script src="js/share.js"></script>
+
+  <!-- Share Modal -->
+  <div id="share-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50 hidden animate-fade-in">
+    <div class="glass-card p-8 rounded-2xl max-w-lg w-full space-y-6 relative">
+      <button id="btn-close-share-modal" class="absolute top-4 right-4 text-zinc-500 hover:text-zinc-300">
+        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+      </button>
+      <h3 class="text-2xl font-bold text-zinc-100 text-center mb-6" id="share-modal-title"></h3>
+
+      <div id="share-export-section" class="space-y-4 text-center hidden">
+        <p class="text-zinc-400">Scan this QR code to share your current vocabulary list.</p>
+        <div id="qrcode-container" class="p-4 bg-white rounded-lg inline-block"></div>
+        <p class="text-xs text-zinc-500 mt-2">Alternatively, copy the text below:</p>
+        <textarea id="exported-data-textarea" readonly rows="4" class="w-full p-2 bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-200 font-mono text-sm"></textarea>
+        <button id="btn-copy-exported-data" class="btn-secondary w-full py-2.5 text-sm">Copy to Clipboard</button>
+      </div>
+
+      <div id="share-import-section" class="space-y-4 hidden">
+        <p class="text-zinc-400">Paste the shared vocabulary data below to import a list.</p>
+        <textarea id="import-data-textarea" rows="4" placeholder="Paste shared data here..." class="w-full p-2 bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-200 font-mono text-sm"></textarea>
+        <button id="btn-import-data" class="btn-primary w-full py-2.5 text-sm">Import List</button>
+      </div>
+    </div>
+  </div>
 
 </body>
 </html>
