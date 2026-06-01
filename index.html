@@ -89,7 +89,7 @@
       </div>
 
       <!-- Central Dictionary Search -->
-      <div id="header-search-wrapper" class="flex-1 max-w-lg relative">
+      <div id="header-search-wrapper" class="flex-1 max-w-lg">
         <div class="relative">
           <svg class="h-5 w-5 text-zinc-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -97,12 +97,23 @@
           <input type="text" id="header-dict-search" placeholder="Search 30,000+ words…"
             class="w-full bg-zinc-900/80 border border-zinc-800 rounded-xl px-11 py-2.5 text-sm text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 focus:bg-zinc-900 transition-all duration-200" />
           <kbd class="hidden sm:inline absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-mono text-zinc-500 bg-zinc-800 px-1.5 py-0.5 rounded">Ctrl+K</kbd>
-        </div>
-        <!-- Search results dropdown -->
-        <div id="header-dict-results" class="hidden absolute left-0 right-0 top-full mt-1.5 bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl shadow-black/50 overflow-hidden z-50 max-h-80 overflow-y-auto">
-          <p class="text-zinc-500 text-xs text-center py-6">Type to search the dictionary</p>
+
+          <!-- Dictionary Search Dropdown -->
+          <div id="dict-dropdown" class="hidden absolute left-0 right-0 top-full mt-2 z-50 bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl shadow-black/60 overflow-hidden animate-fade-in max-h-[78vh] flex flex-col">
+            <div class="flex items-center gap-2 px-4 py-3 border-b border-zinc-800 bg-zinc-950/60 flex-shrink-0">
+              <svg class="h-4 w-4 text-brand-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <p id="dict-dropdown-count" class="text-xs text-zinc-500 flex-1">0 words found</p>
+              <span class="text-[10px] text-zinc-600 font-mono">ESC to close</span>
+            </div>
+            <div id="dict-dropdown-results" class="flex-1 overflow-y-auto p-2">
+              <p class="text-zinc-500 text-xs text-center py-8">Type to search the dictionary</p>
+            </div>
+          </div>
         </div>
       </div>
+
 
       <!-- Quick Wordlist Summary Ring -->
       <div id="header-stats" class="hidden sm:flex items-center gap-4 flex-shrink-0">

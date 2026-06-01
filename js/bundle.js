@@ -128,13 +128,27 @@ const centralDictionary = {
       for (const entry of this.data.dictionary) {
         if (results.has(entry.id)) continue;
         const word = entry.word.toLowerCase();
-        
-        // Only check words of similar length
+
         if (Math.abs(word.length - lowerQuery.length) <= 2) {
           const dist = this.editDistance(lowerQuery, word, 2);
           if (dist <= 2) {
             results.set(entry.id, { entry, score: 20 - dist * 5 });
           }
+        }
+        if (results.size >= limit * 4) break;
+      }
+    }
+
+    // Strategy 4: Definition search — match query in Chinese definition
+    if (results.size < limit) {
+      for (const entry of this.data.dictionary) {
+        if (results.has(entry.id)) continue;
+        const def = entry.definition;
+        if (def.includes(query)) {
+          // Score: prefer shorter definitions and exact matches
+          let score = 15;
+          score -= def.length * 0.01;
+          results.set(entry.id, { entry, score });
         }
         if (results.size >= limit * 3) break;
       }
@@ -909,7 +923,9 @@ const dictation = {
       phoneticsContainer.classList.add('hidden');
     }
 
-    document.getElementById('revealed-definition').textContent = wordData.definition;
+    const defEl = document.getElementById('revealed-definition');
+    defEl.textContent = wordData.definition;
+    defEl.style.whiteSpace = 'pre-line';
   },
 
   endSession() {
@@ -985,7 +1001,7 @@ const dictation = {
               <span>${wordEscaped}</span>
               <span class="text-[10px] font-mono text-zinc-500">(${((r.elapsed / 1000)).toFixed(1)}s)</span>
             </h4>
-            ${defEscaped ? `<p class="text-xs text-zinc-400 mt-1.5 leading-relaxed truncate" title="${defEscaped}">${defEscaped}</p>` : ''}
+            ${defEscaped ? `<p class="text-xs text-zinc-400 mt-1.5 leading-relaxed whitespace-pre-line line-clamp-3" title="${defEscaped}">${defEscaped}</p>` : ''}
             <div class="flex gap-2 mt-2">
               <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full ${r.initialStatus === 'mastered' ? 'bg-emerald-500/20 text-emerald-300' : (r.initialStatus === 'unfamiliar' ? 'bg-amber-500/20 text-amber-300' : 'bg-zinc-700 text-zinc-400')}">
                 Original: ${r.initialStatus}
@@ -1012,9 +1028,9 @@ const dictation = {
         <div class="flex items-center justify-between border-t border-zinc-900 pt-2.5 text-[10px]">
           <div class="flex items-center gap-1.5">
             <span class="text-zinc-500 font-medium">State Shift:</span>
-            <span class="font-semibold text-zinc-400">${r.initialStatus}</span>
+            <span class="font-semibold ${r.initialStatus === 'mastered' ? 'text-emerald-400' : (r.initialStatus === 'unfamiliar' ? 'text-amber-400' : 'text-zinc-400')}">${r.initialStatus}</span>
             <svg class="h-3 w-3 text-zinc-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
-            <span class="font-semibold text-brand-400">${r.finalStatus}</span>
+            <span class="font-semibold ${r.finalStatus === 'mastered' ? 'text-emerald-400' : (r.finalStatus === 'unfamiliar' ? 'text-amber-400' : 'text-zinc-400')}">${r.finalStatus}</span>
           </div>
           <button class="btn-replay-word text-zinc-500 hover:text-brand-400 flex items-center gap-1 text-[10px] font-semibold" data-word="${wordEscaped}">
             Replay Audio
@@ -1503,7 +1519,7 @@ const ledger = {
           </div>
         </td>
         <td class="px-6 py-3.5">
-          <div class="text-sm text-zinc-300">${this.escapeHtml(wordData.definition)}</div>
+          <div class="text-sm text-zinc-300 whitespace-pre-line">${this.escapeHtml(wordData.definition)}</div>
         </td>
         <td class="px-6 py-3.5 text-center">
           <span class="text-sm font-semibold text-zinc-300">${attempts}</span>
@@ -1557,115 +1573,213 @@ const ledger = {
 };
 
 // ====================================================================================
-// Dictionary Lookup UI Controller — Header search bar with dropdown
+// Dictionary Lookup — Header search dropdown panel
 // ====================================================================================
 const dictionaryLookup = {
+  highlightedIndex: -1,
+  resultCount: 0,
+  closeTimeoutId: null,
+
   init() {
     this.bindEvents();
   },
 
+  openDropdown() {
+    const dropdown = document.getElementById('dict-dropdown');
+    if (!dropdown) return;
+    dropdown.classList.remove('hidden');
+    dropdown.classList.remove('animate-fade-in');
+    void dropdown.offsetWidth;
+    dropdown.classList.add('animate-fade-in');
+    this.highlightedIndex = -1;
+    this.performSearch();
+  },
+
+  closeDropdown(blurSearch) {
+    const dropdown = document.getElementById('dict-dropdown');
+    if (dropdown) dropdown.classList.add('hidden');
+    if (this.closeTimeoutId) {
+      clearTimeout(this.closeTimeoutId);
+      this.closeTimeoutId = null;
+    }
+    this.highlightedIndex = -1;
+    if (blurSearch) {
+      const searchInput = document.getElementById('header-dict-search');
+      if (searchInput) searchInput.blur();
+    }
+  },
+
   bindEvents() {
     const searchInput = document.getElementById('header-dict-search');
-    const resultsDropdown = document.getElementById('header-dict-results');
-    const wrapper = document.getElementById('header-search-wrapper');
+    const dropdown = document.getElementById('dict-dropdown');
+    const searchWrapper = document.getElementById('header-search-wrapper');
 
-    if (!searchInput || !resultsDropdown) return;
+    if (!searchInput || !dropdown) return;
 
-    // Show dropdown on focus / input
     searchInput.addEventListener('focus', () => {
-      resultsDropdown.classList.remove('hidden');
-      this.performSearch();
+      this.openDropdown();
     });
 
     searchInput.addEventListener('input', () => {
-      resultsDropdown.classList.remove('hidden');
-      this.performSearch();
+      this.openDropdown();
     });
 
-    // Ctrl+K shortcut to focus search
+    searchInput.addEventListener('blur', () => {
+      this.closeTimeoutId = setTimeout(() => {
+        this.closeDropdown(false);
+      }, 150);
+    });
+
+    dropdown.addEventListener('mousedown', (e) => {
+      if (this.closeTimeoutId) {
+        clearTimeout(this.closeTimeoutId);
+        this.closeTimeoutId = null;
+      }
+      if (!e.target.closest('.btn-dict-pronounce')) {
+        e.preventDefault();
+      }
+    });
+
+    dropdown.addEventListener('click', (e) => {
+      if (!e.target.closest('.btn-dict-pronounce')) {
+        searchInput.focus();
+      }
+    });
+
+    searchInput.addEventListener('keydown', (e) => {
+      const dropdownVisible = !dropdown.classList.contains('hidden');
+
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        if (!dropdownVisible) { this.openDropdown(); return; }
+        this.highlightedIndex = Math.min(this.highlightedIndex + 1, this.resultCount - 1);
+        this.updateHighlight();
+        return;
+      }
+
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (!dropdownVisible) { this.openDropdown(); return; }
+        this.highlightedIndex = Math.max(this.highlightedIndex - 1, -1);
+        this.updateHighlight();
+        return;
+      }
+
+      if (e.key === 'Enter') {
+        if (dropdownVisible && this.highlightedIndex >= 0) {
+          e.preventDefault();
+          this.pronounceHighlighted();
+          return;
+        }
+        if (dropdownVisible) {
+          e.preventDefault();
+          this.closeDropdown(true);
+        }
+        return;
+      }
+
+      if (e.key === 'Escape') {
+        if (dropdownVisible) {
+          e.preventDefault();
+          e.stopPropagation();
+          this.closeDropdown(true);
+        }
+        return;
+      }
+    });
+
     document.addEventListener('keydown', (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
         e.preventDefault();
         searchInput.focus();
         searchInput.select();
-      }
-      // Escape closes the dropdown
-      if (e.key === 'Escape' && !resultsDropdown.classList.contains('hidden')) {
-        resultsDropdown.classList.add('hidden');
-        searchInput.blur();
+        this.openDropdown();
       }
     });
 
-    // Click outside closes dropdown
-    document.addEventListener('click', (e) => {
-      if (wrapper && !wrapper.contains(e.target)) {
-        resultsDropdown.classList.add('hidden');
+    document.addEventListener('mousedown', (e) => {
+      if (dropdown.classList.contains('hidden')) return;
+      if (searchWrapper && !searchWrapper.contains(e.target)) {
+        this.closeDropdown(true);
       }
     });
   },
 
   performSearch() {
     const query = document.getElementById('header-dict-search')?.value || '';
-    const resultsContainer = document.getElementById('header-dict-results');
+    const resultsContainer = document.getElementById('dict-dropdown-results');
+    const countEl = document.getElementById('dict-dropdown-count');
 
     if (!resultsContainer) return;
 
+    this.highlightedIndex = -1;
+
     if (!query.trim()) {
-      resultsContainer.innerHTML = '<p class="text-zinc-500 text-xs text-center py-6">Type to search the dictionary</p>';
+      resultsContainer.className = 'flex-1 overflow-y-auto p-3';
+      resultsContainer.innerHTML = '<p class="text-zinc-500 text-xs text-center py-8">Type to search the dictionary</p>';
+      if (countEl) countEl.textContent = '0 words found';
+      this.resultCount = 0;
       return;
     }
 
-    const results = centralDictionary.search(query, 15);
+    const results = centralDictionary.search(query, 30);
+    this.resultCount = results.length;
+
+    if (countEl) {
+      countEl.textContent = results.length === 1 ? '1 word found' : results.length + ' words found';
+    }
 
     if (results.length === 0) {
-      resultsContainer.innerHTML = '<p class="text-zinc-500 text-xs text-center py-6">No words found</p>';
+      resultsContainer.className = 'flex-1 overflow-y-auto p-3';
+      resultsContainer.innerHTML = '<p class="text-zinc-500 text-xs text-center py-8">No words found</p>';
       return;
     }
 
+    resultsContainer.className = 'flex-1 overflow-y-auto p-3 columns-1 md:columns-2 gap-3 space-y-3';
     resultsContainer.innerHTML = '';
-    results.forEach(entry => {
+
+    results.forEach((entry, index) => {
       const progress = state.getWordProgress(entry.id);
-      let statusColor, statusDot;
+
+      let accentBorder, statusBadgeClass;
       if (progress.status === 'mastered') {
-        statusColor = 'bg-emerald-500/15 border-emerald-500/30 text-emerald-300';
-        statusDot = 'bg-emerald-400';
+        accentBorder = 'border-l-emerald-500/60';
+        statusBadgeClass = 'bg-emerald-500/15 border-emerald-500/30 text-emerald-300';
       } else if (progress.status === 'unfamiliar') {
-        statusColor = 'bg-amber-500/15 border-amber-500/30 text-amber-300';
-        statusDot = 'bg-amber-400';
+        accentBorder = 'border-l-amber-500/60';
+        statusBadgeClass = 'bg-amber-500/15 border-amber-500/30 text-amber-300';
       } else {
-        statusColor = 'bg-zinc-800 border-zinc-700 text-zinc-400';
-        statusDot = 'bg-zinc-500';
+        accentBorder = 'border-l-zinc-700';
+        statusBadgeClass = 'bg-zinc-800 border-zinc-700 text-zinc-400';
       }
 
-      const row = document.createElement('div');
-      row.className = 'flex items-center gap-3 px-4 py-3 hover:bg-zinc-800/60 cursor-pointer transition-colors border-b border-zinc-800/50 last:border-b-0';
+      const statusText = progress.status.charAt(0).toUpperCase() + progress.status.slice(1);
 
-      row.innerHTML = `
-        <span class="w-1.5 h-1.5 rounded-full flex-shrink-0 ${statusDot}"></span>
-        <div class="flex-1 min-w-0">
-          <div class="flex items-center gap-2">
-            <span class="font-mono font-semibold text-zinc-100 text-sm">${this.escapeHtml(entry.word)}</span>
-            <span class="text-[11px] font-mono text-zinc-500">${entry.phonetic ? this.escapeHtml(entry.phonetic) : ''}</span>
-          </div>
-          <p class="text-xs text-zinc-400 truncate mt-0.5">${this.escapeHtml(entry.definition)}</p>
-        </div>
-        <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full border ${statusColor} flex-shrink-0">${progress.status}</span>
-        <button class=\"btn-dict-pronounce flex-shrink-0 text-zinc-500 hover:text-brand-400 p-1 transition-colors\" data-word=\"${this.escapeHtml(entry.word)}\" title=\"Pronounce\">
-          <svg class=\"h-4 w-4\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\" stroke-width=\"2\">
-            <path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M15.536 8.464a5 5 0 010 7.072M18.364 5.636a9 9 0 010 12.728M12 18.75V5.25L7.75 9.5H4.5v5h3.25L12 18.75z\" />
-          </svg>
-        </button>
-      `;
+      const wrapper = document.createElement('div');
+      wrapper.className = 'inline-block w-full mb-3 break-inside-avoid';
+      wrapper.setAttribute('data-dict-index', index);
+      wrapper.setAttribute('data-dict-word', entry.word);
 
-      // Pronounce on row click (except the pronounce button itself)
-      row.addEventListener('click', (e) => {
-        if (!e.target.closest('.btn-dict-pronounce')) {
-          speech.pronounce(entry.word);
-        }
-      });
+      wrapper.innerHTML =
+        '<div class="dict-result-card bg-zinc-800/40 border border-zinc-800 border-l-2 ' + accentBorder + ' rounded-xl p-4 hover:bg-zinc-800/60 transition-colors group cursor-pointer">' +
+          '<div class="flex items-start justify-between gap-3 mb-3">' +
+            '<div class="flex-1 min-w-0">' +
+              '<h4 class="font-mono font-bold text-zinc-100 text-base">' + this.escapeHtml(entry.word) + '</h4>' +
+              (entry.phonetic ? '<p class="text-xs font-mono text-zinc-500 mt-0.5">' + this.escapeHtml(entry.phonetic) + '</p>' : '') +
+            '</div>' +
+            '<div class="flex items-center gap-2 flex-shrink-0">' +
+              '<span class="text-[10px] font-semibold px-2 py-0.5 rounded-full border ' + statusBadgeClass + '">' + statusText + '</span>' +
+              '<button class="btn-dict-pronounce text-zinc-500 hover:text-brand-400 p-1 transition-colors opacity-0 group-hover:opacity-100" data-word="' + this.escapeHtml(entry.word) + '" title="Pronounce">' +
+                '<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">' +
+                  '<path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072M18.364 5.636a9 9 0 010 12.728M12 18.75V5.25L7.75 9.5H4.5v5h3.25L12 18.75z" />' +
+                '</svg>' +
+              '</button>' +
+            '</div>' +
+          '</div>' +
+          this.formatDefinitionHTML(entry.definition) +
+        '</div>';
 
-      // Pronounce button
-      const pronounceBtn = row.querySelector('.btn-dict-pronounce');
+      const pronounceBtn = wrapper.querySelector('.btn-dict-pronounce');
       if (pronounceBtn) {
         pronounceBtn.addEventListener('click', (e) => {
           e.stopPropagation();
@@ -1673,8 +1787,95 @@ const dictionaryLookup = {
         });
       }
 
-      resultsContainer.appendChild(row);
+      const card = wrapper.querySelector('.dict-result-card');
+      card.addEventListener('click', (e) => {
+        if (!e.target.closest('.btn-dict-pronounce')) {
+          speech.pronounce(entry.word);
+        }
+      });
+
+      resultsContainer.appendChild(wrapper);
     });
+  },
+
+  updateHighlight() {
+    const wrappers = document.querySelectorAll('#dict-dropdown-results [data-dict-index]');
+    wrappers.forEach((wrapper, i) => {
+      const card = wrapper.querySelector('.dict-result-card');
+      if (i === this.highlightedIndex) {
+        wrapper.classList.add('ring-2', 'ring-brand-500/60', 'rounded-xl');
+        wrapper.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      } else {
+        wrapper.classList.remove('ring-2', 'ring-brand-500/60', 'rounded-xl');
+      }
+    });
+  },
+
+  pronounceHighlighted() {
+    const wrapper = document.querySelector('#dict-dropdown-results [data-dict-index="' + this.highlightedIndex + '"]');
+    if (wrapper) {
+      const word = wrapper.getAttribute('data-dict-word');
+      if (word) speech.pronounce(word);
+    }
+  },
+
+  formatDefinitionHTML(raw) {
+    if (!raw || typeof raw !== 'string') return '';
+
+    const lines = raw.split('\n').filter(l => l.trim());
+    if (lines.length === 0) return '<p class="text-sm text-zinc-500">—</p>';
+
+    const parts = [];
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (!line) continue;
+
+      const posMatch = line.match(/^(n\.|vt\.|vi\.|adj\.|adv\.|prep\.|conj\.|pron\.|art\.|int\.|aux\.|num\.|pref\.|suf\.|abbr\.)\s*/);
+      let pos = '';
+      let content = line;
+
+      if (posMatch) {
+        pos = posMatch[1];
+        content = line.substring(posMatch[0].length).trim();
+      }
+
+      const senseMatches = [...content.matchAll(/(\d+)\.\s*(.*?)(?=\s*\d+\.\s*|$)/g)];
+
+      let bodyHTML = '';
+
+      if (senseMatches.length > 1) {
+        const items = senseMatches.map(m =>
+          '<div class="flex gap-2 pl-2 py-0.5">' +
+            '<span class="text-[10px] text-zinc-500 font-mono flex-shrink-0 min-w-[1.25rem] text-right">' + this.escapeHtml(m[1]) + '.</span>' +
+            '<span class="text-xs text-zinc-300 leading-relaxed">' + this.escapeHtml(m[2]) + '</span>' +
+          '</div>'
+        ).join('');
+        bodyHTML = '<div class="space-y-0">' + items + '</div>';
+      } else if (content) {
+        bodyHTML = '<p class="text-xs text-zinc-300 leading-relaxed pl-2">' + this.escapeHtml(content) + '</p>';
+      }
+
+      let sectionHTML;
+
+      if (pos) {
+        sectionHTML =
+          '<div class="flex items-start gap-2">' +
+            '<span class="text-[10px] font-bold uppercase tracking-wider text-brand-400 bg-brand-500/10 border border-brand-500/20 px-1.5 py-0.5 rounded flex-shrink-0 min-w-[2.25rem] text-center">' + this.escapeHtml(pos.replace('.', '')) + '</span>' +
+            '<div class="flex-1 min-w-0">' + bodyHTML + '</div>' +
+          '</div>';
+      } else {
+        sectionHTML = '<div class="pl-2">' + bodyHTML + '</div>';
+      }
+
+      if (i > 0 && pos) {
+        parts.push('<div class="my-1 border-t border-zinc-800/50"></div>');
+      }
+
+      parts.push(sectionHTML);
+    }
+
+    return '<div class="space-y-1.5">' + parts.join('') + '</div>';
   },
 
   escapeHtml(text) {

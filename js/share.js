@@ -119,11 +119,14 @@ const shareModule = {
       wordProgress[id] = { status: 'mastered', correct: 0, wrong: 0 };
     });
 
-    // Parse stats
+    // Parse stats with validation
     if (payload.s) {
-      const stats = payload.s.split(',');
-      for (const stat of stats) {
-        const [id, correct, wrong] = stat.split(':').map(Number);
+      const statEntries = payload.s.split(',');
+      for (const entry of statEntries) {
+        if (!entry || entry.trim() === '') continue;
+        const parts = entry.split(':').map(Number);
+        if (parts.length !== 3 || parts.some(isNaN)) continue;
+        const [id, correct, wrong] = parts;
         if (!wordProgress[id]) {
           wordProgress[id] = { status: 'unlearned', correct: 0, wrong: 0 };
         }
@@ -226,12 +229,21 @@ const shareModule = {
       const wordCount = Object.keys(progress.wordProgress).length;
 
       if (qrContainer) {
-        qrContainer.innerHTML = `
-          <div class="text-zinc-400 text-sm mb-4">
-            <p>Sharing ${wordCount} words with progress</p>
-            <p class="text-xs mt-1">Data size: ${encodedData.length} chars</p>
-          </div>
-        `;
+        if (wordCount === 0) {
+          qrContainer.innerHTML = `
+            <div class="text-zinc-500 text-sm mb-4">
+              <p>No progress to share.</p>
+              <p class="text-xs mt-1">Complete a dictation session first.</p>
+            </div>
+          `;
+        } else {
+          qrContainer.innerHTML = `
+            <div class="text-zinc-400 text-sm mb-4">
+              <p>Sharing ${wordCount} words with progress</p>
+              <p class="text-xs mt-1">Data size: ${encodedData.length} chars</p>
+            </div>
+          `;
+        }
 
         if (encodedData.length <= this.MAX_QR_DATA_LENGTH) {
           this.generateQRCode(encodedData, qrContainer);
@@ -339,10 +351,16 @@ const shareModule = {
       }
       state.saveUserProgress();
 
-      // Refresh UI
-      dashboard.updateStats();
-      dashboard.updateHeaderStats();
-      ledger.render();
+      // Refresh UI safely
+      if (typeof dashboard !== 'undefined' && dashboard.updateStats) {
+        dashboard.updateStats();
+      }
+      if (typeof dashboard !== 'undefined' && dashboard.updateHeaderStats) {
+        dashboard.updateHeaderStats();
+      }
+      if (typeof ledger !== 'undefined' && ledger.render) {
+        ledger.render();
+      }
 
       playSFX('correct');
       alert(`Successfully imported ${wordCount} words!`);
