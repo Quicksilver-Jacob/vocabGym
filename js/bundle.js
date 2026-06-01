@@ -1,5 +1,5 @@
 // bundle.js - Refactored for Central Dictionary Architecture
-// IELTS Vocab Gym with ID-based word reference system
+// English Vocab Gym with ID-based word reference system
 
 // ====================================================================================
 // Central Dictionary Loader (Baked-in Database from dictionary.js)
@@ -87,44 +87,52 @@ const centralDictionary = {
     return dp[len2];
   },
 
+  // COCA frequency boost: common words rank higher
+  // rank 1 (the) = +25, rank 60000 = +0, not in COCA = +0
+  freqBoost(entry) {
+    const r = entry.rank || 0;
+    if (!r) return 0;
+    return (60000 - r) / 2400;
+  },
+
   search(query, limit = 20) {
     if (!query) return [];
     const lowerQuery = query.toLowerCase().trim();
     if (!lowerQuery) return [];
-    
-    const results = new Map(); // Use Map to deduplicate
-    
+    const isChinese = /[一-鿿]/.test(query);
+
+    const results = new Map();
+
     // Strategy 1: Exact prefix match (highest priority)
-    if (this.prefixIndex && this.prefixIndex.has(lowerQuery)) {
+    if (!isChinese && this.prefixIndex && this.prefixIndex.has(lowerQuery)) {
       const prefixMatches = this.prefixIndex.get(lowerQuery);
       for (const entry of prefixMatches) {
         if (!results.has(entry.id)) {
-          results.set(entry.id, { entry, score: 100 - entry.word.length }); // Shorter words rank higher
+          results.set(entry.id, { entry, score: 100 - entry.word.length + this.freqBoost(entry) });
         }
       }
     }
-    
+
     // Strategy 2: Contains match (medium priority)
-    if (results.size < limit) {
+    if (!isChinese && results.size < limit) {
       for (const entry of this.data.dictionary) {
         if (results.has(entry.id)) continue;
         const word = entry.word.toLowerCase();
-        
+
         if (word.includes(lowerQuery)) {
-          // Score: starts with query > contains query
-          let score = 50;
+          let score = 50 + this.freqBoost(entry);
           if (word.startsWith(lowerQuery)) score += 30;
           if (word === lowerQuery) score += 20;
-          score -= entry.word.length * 0.1; // Prefer shorter words
-          
+          score -= entry.word.length * 0.1;
+
           results.set(entry.id, { entry, score });
           if (results.size >= limit * 2) break;
         }
       }
     }
-    
-    // Strategy 3: Fuzzy match for typos (lowest priority, only for longer queries)
-    if (lowerQuery.length >= 4 && results.size < limit) {
+
+    // Strategy 3: Fuzzy match for typos (only for longer English queries)
+    if (!isChinese && lowerQuery.length >= 4 && results.size < limit) {
       for (const entry of this.data.dictionary) {
         if (results.has(entry.id)) continue;
         const word = entry.word.toLowerCase();
@@ -132,29 +140,27 @@ const centralDictionary = {
         if (Math.abs(word.length - lowerQuery.length) <= 2) {
           const dist = this.editDistance(lowerQuery, word, 2);
           if (dist <= 2) {
-            results.set(entry.id, { entry, score: 20 - dist * 5 });
+            results.set(entry.id, { entry, score: 20 - dist * 5 + this.freqBoost(entry) });
           }
         }
         if (results.size >= limit * 4) break;
       }
     }
 
-    // Strategy 4: Definition search — match query in Chinese definition
+    // Strategy 4: Definition search — match in Chinese definition
     if (results.size < limit) {
       for (const entry of this.data.dictionary) {
         if (results.has(entry.id)) continue;
         const def = entry.definition;
         if (def.includes(query)) {
-          // Score: prefer shorter definitions and exact matches
-          let score = 15;
+          let score = 15 + this.freqBoost(entry);
           score -= def.length * 0.01;
           results.set(entry.id, { entry, score });
         }
         if (results.size >= limit * 3) break;
       }
     }
-    
-    // Sort by score and return top results
+
     return Array.from(results.values())
       .sort((a, b) => b.score - a.score)
       .slice(0, limit)
@@ -169,7 +175,7 @@ const centralDictionary = {
 // ====================================================================================
 // State Management - User Progress Only (No Word Definitions)
 // ====================================================================================
-const STATE_KEY_PREFIX = 'ielts_vocab_gym_';
+const STATE_KEY_PREFIX = 'english_vocab_gym_';
 const USER_PROGRESS_KEY = STATE_KEY_PREFIX + 'user_progress';
 const LIST_KEY_PREFIX = STATE_KEY_PREFIX + 'list_';
 
@@ -1154,7 +1160,7 @@ const dashboard = {
     const btnTestAudio = document.getElementById('btn-test-audio');
     if (btnTestAudio) {
       btnTestAudio.addEventListener('click', () => {
-        speech.pronounce('welcome to IELTS vocabulary gym');
+        speech.pronounce('welcome to English vocabulary gym');
       });
     }
 
@@ -1344,7 +1350,7 @@ const dashboard = {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `ielts_progress_${Date.now()}.json`;
+    a.download = `vocab_gym_progress_${Date.now()}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
