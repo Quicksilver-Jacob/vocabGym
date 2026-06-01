@@ -6,7 +6,7 @@
 1. Go to https://quicksilver-jacob.github.io/vocabGym/
 
 ## Add Vocab List
-1. Download the vocab list (you can just use the one in the repo)
+1. Download the vocab list (you can just use the one in the "books" folder)
 2. Upload it to the app
 3. Enjoy
 
