@@ -52,7 +52,7 @@ No `npm install`, no build tools, no server. Dependencies load from CDN (Tailwin
 |--------|------|-------------|
 | English-Chinese dictionary | `data/英汉词典.txt` | ~38,000 entries |
 | COCA frequency ranks | `data/COCA60000.txt` | 60,000 word frequency ranking |
-| Wiktionary sentences | `data/kaikki.org-dictionary-English.jsonl` | Extracted via [wiktextract](https://github.com/tatuylonen/wiktextract) |
+| Wiktionary sentences | `data/kaikki.org-dictionary-English.jsonl` (or https://kaikki.org/dictionary/English/kaikki.org-dictionary-English.jsonl) | Extracted via [wiktextract](https://github.com/tatuylonen/wiktextract) |
 
 ## Regenerating Data
 
