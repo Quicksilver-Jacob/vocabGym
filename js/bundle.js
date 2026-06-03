@@ -498,6 +498,30 @@ const speech = {
     }
 
     window.speechSynthesis.speak(utterance);
+  },
+
+  speakSentence(text) {
+    if (!window.speechSynthesis || !text) return;
+    window.speechSynthesis.cancel();
+
+    const cleaned = text.replace(/[\[\](){}\/\\⟨⟩‿ˈˌː.]/g, '').trim();
+    if (!cleaned) return;
+
+    const utterance = new SpeechSynthesisUtterance(cleaned);
+
+    const select = document.getElementById('voice-selector');
+    if (select && select.value !== '' && select.value !== 'default') {
+      const voiceIdx = parseInt(select.value);
+      if (!isNaN(voiceIdx) && this.voices[voiceIdx]) {
+        utterance.voice = this.voices[voiceIdx];
+      }
+    }
+
+    utterance.rate = 1.0;
+    utterance.pitch = 1.0;
+
+    // Chrome drops utterances spoken immediately after cancel()
+    setTimeout(() => window.speechSynthesis.speak(utterance), 20);
   }
 };
 
@@ -674,6 +698,14 @@ const dictation = {
 
     this.updateUnfamiliarBadge(state.getWordStatus(wordId) === 'unfamiliar');
 
+    const hasSentence = typeof SENTENCE_DATA !== 'undefined' &&
+                        SENTENCE_DATA[wordId] &&
+                        SENTENCE_DATA[wordId].length > 0;
+    const sentenceHint = document.getElementById('sentence-hint');
+    if (sentenceHint) {
+      sentenceHint.classList.toggle('hidden', !hasSentence);
+    }
+
     setTimeout(() => {
       this.playActiveWordAudio(() => {
         state.wordStartTime = Date.now();
@@ -689,6 +721,15 @@ const dictation = {
     if (wordData) {
       speech.pronounce(wordData.word, onEnd);
     }
+  },
+
+  playSentence() {
+    if (state.sessionIndex >= state.sessionWordIds.length) return;
+    const wordId = state.sessionWordIds[state.sessionIndex];
+    if (typeof SENTENCE_DATA === 'undefined') return;
+    const sentences = SENTENCE_DATA[wordId];
+    if (!sentences || sentences.length === 0) return;
+    speech.speakSentence(sentences[0]);
   },
 
   updateUnfamiliarBadge(isUnfamiliar) {
@@ -780,6 +821,12 @@ const dictation = {
     const wordId = state.sessionWordIds[state.sessionIndex];
     const wordData = centralDictionary.getById(wordId);
     if (!wordData) return;
+
+    if (e.key === 'F2') {
+      e.preventDefault();
+      this.playSentence();
+      return;
+    }
 
     if (e.ctrlKey && e.code === 'Space') {
       e.preventDefault();
@@ -1172,10 +1219,6 @@ const dashboard = {
       });
     }
 
-    const btnExportJson = document.getElementById('btn-export-json');
-    if (btnExportJson) {
-      btnExportJson.addEventListener('click', () => this.exportJSON());
-    }
   },
 
   refreshSelectors() {
@@ -1338,26 +1381,6 @@ const dashboard = {
     if (statUnlearned) statUnlearned.textContent = unlearned;
   },
 
-  exportJSON() {
-    const progress = state.getUserProgress();
-    const exportData = {
-      exportDate: new Date().toISOString(),
-      version: '2.0',
-      progress: progress
-    };
-
-    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `vocab_gym_progress_${Date.now()}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-
-    playSFX('correct');
-  }
 };
 
 // ====================================================================================
@@ -1747,19 +1770,14 @@ const dictionaryLookup = {
     results.forEach((entry, index) => {
       const progress = state.getWordProgress(entry.id);
 
-      let accentBorder, statusBadgeClass;
+      let accentBorder;
       if (progress.status === 'mastered') {
         accentBorder = 'border-l-emerald-500/60';
-        statusBadgeClass = 'bg-emerald-500/15 border-emerald-500/30 text-emerald-300';
       } else if (progress.status === 'unfamiliar') {
         accentBorder = 'border-l-amber-500/60';
-        statusBadgeClass = 'bg-amber-500/15 border-amber-500/30 text-amber-300';
       } else {
         accentBorder = 'border-l-zinc-700';
-        statusBadgeClass = 'bg-zinc-800 border-zinc-700 text-zinc-400';
       }
-
-      const statusText = progress.status.charAt(0).toUpperCase() + progress.status.slice(1);
 
       const wrapper = document.createElement('div');
       wrapper.className = 'inline-block w-full mb-3 break-inside-avoid';
@@ -1768,21 +1786,19 @@ const dictionaryLookup = {
 
       wrapper.innerHTML =
         '<div class="dict-result-card bg-zinc-800/40 border border-zinc-800 border-l-2 ' + accentBorder + ' rounded-xl p-4 hover:bg-zinc-800/60 transition-colors group cursor-pointer">' +
-          '<div class="flex items-start justify-between gap-3 mb-3">' +
+          '<div class="flex items-start gap-3 mb-3">' +
             '<div class="flex-1 min-w-0">' +
-              '<h4 class="font-mono font-bold text-zinc-100 text-base">' + this.escapeHtml(entry.word) + '</h4>' +
+              '<h4 class="font-mono font-bold text-zinc-100 text-base break-words">' + this.escapeHtml(entry.word) + '</h4>' +
               (entry.phonetic ? '<p class="text-xs font-mono text-zinc-500 mt-0.5">' + this.escapeHtml(entry.phonetic) + '</p>' : '') +
             '</div>' +
-            '<div class="flex items-center gap-2 flex-shrink-0">' +
-              '<span class="text-[10px] font-semibold px-2 py-0.5 rounded-full border ' + statusBadgeClass + '">' + statusText + '</span>' +
-              '<button class="btn-dict-pronounce text-zinc-500 hover:text-brand-400 p-1 transition-colors opacity-0 group-hover:opacity-100" data-word="' + this.escapeHtml(entry.word) + '" title="Pronounce">' +
-                '<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">' +
-                  '<path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072M18.364 5.636a9 9 0 010 12.728M12 18.75V5.25L7.75 9.5H4.5v5h3.25L12 18.75z" />' +
-                '</svg>' +
-              '</button>' +
-            '</div>' +
+            '<button class="btn-dict-pronounce text-zinc-500 hover:text-brand-400 p-1 transition-colors opacity-0 group-hover:opacity-100 flex-shrink-0" data-word="' + this.escapeHtml(entry.word) + '" title="Pronounce">' +
+              '<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">' +
+                '<path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072M18.364 5.636a9 9 0 010 12.728M12 18.75V5.25L7.75 9.5H4.5v5h3.25L12 18.75z" />' +
+              '</svg>' +
+            '</button>' +
           '</div>' +
           this.formatDefinitionHTML(entry.definition) +
+          this.getSentencesHTML(entry.id) +
         '</div>';
 
       const pronounceBtn = wrapper.querySelector('.btn-dict-pronounce');
@@ -1882,6 +1898,18 @@ const dictionaryLookup = {
     }
 
     return '<div class="space-y-1.5">' + parts.join('') + '</div>';
+  },
+
+  getSentencesHTML(wordId) {
+    if (typeof SENTENCE_DATA === 'undefined') return '';
+    const sentences = SENTENCE_DATA[wordId];
+    if (!sentences || sentences.length === 0) return '';
+
+    const items = sentences.map(s =>
+      '<p class="text-xs text-zinc-500 italic leading-relaxed">&ldquo;' + this.escapeHtml(s) + '&rdquo;</p>'
+    ).join('');
+
+    return '<div class="mt-3 pt-3 border-t border-zinc-800/50 space-y-1">' + items + '</div>';
   },
 
   escapeHtml(text) {

@@ -366,6 +366,10 @@
           <kbd class="bg-zinc-800 border border-zinc-700 text-zinc-300 px-2 py-0.5 rounded font-mono font-bold text-[10px]">Ctrl + Space</kbd>
           <span>Replay Pronunciation Audio</span>
         </div>
+        <div class="flex items-center gap-2">
+          <kbd class="bg-zinc-800 border border-zinc-700 text-zinc-300 px-2 py-0.5 rounded font-mono font-bold text-[10px]">F2</kbd>
+          <span>Play Sample Sentence</span>
+        </div>
       </div>
 
     </div>
@@ -408,6 +412,9 @@
             </button>
             <div class="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[10px] uppercase font-bold tracking-widest text-zinc-500 group-hover:text-brand-400 transition-colors whitespace-nowrap">
               Ctrl+Space to Replay
+            </div>
+            <div id="sentence-hint" class="hidden absolute -bottom-12 left-1/2 -translate-x-1/2 text-[10px] font-medium text-zinc-600 hover:text-brand-400 transition-colors whitespace-nowrap">
+              F2 for example
             </div>
           </div>
 
@@ -542,15 +549,12 @@
               <option value="mastered">Mastered</option>
             </select>
 
-            <button id="btn-export-json" class="btn-secondary py-2 text-xs" title="Export vault progress & session history as unified JSON">
-              <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+
+<button id="btn-export-share" class="btn-secondary py-2 text-xs" title="Export your progress as encoded text">
+              <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" /></svg>
               Export
             </button>
-            <button id="btn-export-share" class="btn-secondary py-2 text-xs" title="Export current list for sharing via QR code">
-              <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" /></svg>
-              Share
-            </button>
-            <button id="btn-import-share" class="btn-secondary py-2 text-xs" title="Import list from shared QR code or text">
+            <button id="btn-import-share" class="btn-secondary py-2 text-xs" title="Import progress from encoded text">
               <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4m0 16h.01" /></svg>
               Import
             </button>
@@ -603,13 +607,13 @@
   <!-- DECOUPLED APPLICATION CORE ENGINE (Option A Sequencing) -->
   <!-- SheetJS CDN Library -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <!-- qrcode.js CDN Library -->
-  <script src="https://cdn.jsdelivr.net/npm/davidshimjs-qrcodejs@0.0.2/qrcode.min.js"></script>
+
 
   <!-- Sequenced App Scripts -->
   <script src="js/dictionary.js"></script>
   <script src="js/bundle.js"></script>
   <script src="js/share.js"></script>
+  <script src="js/sentences.js"></script>
 
   <!-- Share Modal -->
   <div id="share-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50 hidden animate-fade-in">
@@ -619,18 +623,16 @@
       </button>
       <h3 class="text-2xl font-bold text-zinc-100 text-center mb-6" id="share-modal-title"></h3>
 
-      <div id="share-export-section" class="space-y-4 text-center hidden">
-        <p class="text-zinc-400">Scan this QR code to share your current vocabulary list.</p>
-        <div id="qrcode-container" class="p-4 bg-white rounded-lg inline-block"></div>
-        <p class="text-xs text-zinc-500 mt-2">Alternatively, copy the text below:</p>
-        <textarea id="exported-data-textarea" readonly rows="4" class="w-full p-2 bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-200 font-mono text-sm"></textarea>
-        <button id="btn-copy-exported-data" class="btn-secondary w-full py-2.5 text-sm">Copy to Clipboard</button>
+      <div id="share-export-section" class="space-y-4 hidden">
+        <p class="text-zinc-400 text-sm">Copy the encoded text below to share your progress.</p>
+        <textarea id="exported-data-textarea" readonly rows="4" class="w-full p-3 bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-200 font-mono text-sm"></textarea>
+        <button id="btn-copy-exported-data" class="btn-primary w-full py-2.5 text-sm">Copy to Clipboard</button>
       </div>
 
       <div id="share-import-section" class="space-y-4 hidden">
-        <p class="text-zinc-400">Paste the shared vocabulary data below to import a list.</p>
-        <textarea id="import-data-textarea" rows="4" placeholder="Paste shared data here..." class="w-full p-2 bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-200 font-mono text-sm"></textarea>
-        <button id="btn-import-data" class="btn-primary w-full py-2.5 text-sm">Import List</button>
+        <p class="text-zinc-400 text-sm">Paste encoded progress data below to import.</p>
+        <textarea id="import-data-textarea" rows="4" placeholder="Paste shared data here..." class="w-full p-3 bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-200 font-mono text-sm"></textarea>
+        <button id="btn-import-data" class="btn-primary w-full py-2.5 text-sm">Import Progress</button>
       </div>
     </div>
   </div>

@@ -1,9 +1,8 @@
-// share.js - Vocabulary List Sharing Module with Compression
-// Supports ID-based sharing with run-length encoding for ranges
+// share.js - Progress Import/Export with Compression
+// Uses run-length encoding for ID ranges
 
 const shareModule = {
   VERSION: '2.0',
-  MAX_QR_DATA_LENGTH: 2000,
 
   /**
    * Compress array of numbers using run-length encoding for consecutive sequences
@@ -56,7 +55,7 @@ const shareModule = {
   },
 
   /**
-   * Encode user progress for sharing
+   * Encode user progress for export
    * Format: v2.0|unfamiliarIds|masteredIds|wordStats
    */
   encodeProgress() {
@@ -109,12 +108,10 @@ const shareModule = {
 
     const wordProgress = {};
 
-    // Set unfamiliar
     unfamiliarIds.forEach(id => {
       wordProgress[id] = { status: 'unfamiliar', correct: 0, wrong: 0 };
     });
 
-    // Set mastered
     masteredIds.forEach(id => {
       wordProgress[id] = { status: 'mastered', correct: 0, wrong: 0 };
     });
@@ -136,37 +133,6 @@ const shareModule = {
     }
 
     return wordProgress;
-  },
-
-  /**
-   * Encode a word list (just IDs)
-   */
-  encodeList(listName, wordIds) {
-    const payload = {
-      v: '2.0',
-      n: listName,
-      i: this.compressIdList(wordIds)
-    };
-
-    const jsonStr = JSON.stringify(payload);
-    return btoa(unescape(encodeURIComponent(jsonStr)));
-  },
-
-  /**
-   * Decode a word list
-   */
-  decodeList(encodedData) {
-    const jsonStr = decodeURIComponent(escape(atob(encodedData)));
-    const payload = JSON.parse(jsonStr);
-
-    if (payload.v !== '2.0') {
-      throw new Error('Unsupported version');
-    }
-
-    return {
-      listName: payload.n,
-      wordIds: this.decompressIdList(payload.i)
-    };
   },
 
   init() {
@@ -212,52 +178,25 @@ const shareModule = {
     const title = document.getElementById('share-modal-title');
     const exportSection = document.getElementById('share-export-section');
     const importSection = document.getElementById('share-import-section');
-    const qrContainer = document.getElementById('qrcode-container');
     const textarea = document.getElementById('exported-data-textarea');
 
     if (!modal) return;
 
-    if (title) title.textContent = 'Share Your Progress';
+    if (title) title.textContent = 'Export Progress';
     if (exportSection) exportSection.classList.remove('hidden');
     if (importSection) importSection.classList.add('hidden');
 
     try {
       const encodedData = this.encodeProgress();
-
-      // Show stats
       const progress = state.getUserProgress();
       const wordCount = Object.keys(progress.wordProgress).length;
 
-      if (qrContainer) {
-        if (wordCount === 0) {
-          qrContainer.innerHTML = `
-            <div class="text-zinc-500 text-sm mb-4">
-              <p>No progress to share.</p>
-              <p class="text-xs mt-1">Complete a dictation session first.</p>
-            </div>
-          `;
-        } else {
-          qrContainer.innerHTML = `
-            <div class="text-zinc-400 text-sm mb-4">
-              <p>Sharing ${wordCount} words with progress</p>
-              <p class="text-xs mt-1">Data size: ${encodedData.length} chars</p>
-            </div>
-          `;
-        }
-
-        if (encodedData.length <= this.MAX_QR_DATA_LENGTH) {
-          this.generateQRCode(encodedData, qrContainer);
-        } else {
-          qrContainer.innerHTML += `
-            <div class="text-amber-400 text-sm p-4 border border-amber-500/30 rounded-lg">
-              <p>Data too large for QR code.</p>
-              <p class="text-xs mt-1">Please use text copy below.</p>
-            </div>
-          `;
-        }
+      if (wordCount === 0) {
+        if (textarea) textarea.value = 'No progress to export yet.';
+      } else {
+        if (textarea) textarea.value = encodedData;
       }
 
-      if (textarea) textarea.value = encodedData;
       modal.classList.remove('hidden');
     } catch (e) {
       alert('Failed to encode progress: ' + e.message);
@@ -284,23 +223,6 @@ const shareModule = {
   closeModal() {
     const modal = document.getElementById('share-modal');
     if (modal) modal.classList.add('hidden');
-  },
-
-  generateQRCode(data, container) {
-    if (!container || typeof QRCode === 'undefined') return;
-
-    const qrDiv = document.createElement('div');
-    qrDiv.className = 'inline-block p-4 bg-white rounded-lg';
-    container.appendChild(qrDiv);
-
-    new QRCode(qrDiv, {
-      text: data,
-      width: 200,
-      height: 200,
-      colorDark: '#000000',
-      colorLight: '#ffffff',
-      correctLevel: QRCode.CorrectLevel.M
-    });
   },
 
   async copyToClipboard() {
@@ -332,7 +254,7 @@ const shareModule = {
 
     const encodedData = textarea.value.trim();
     if (!encodedData) {
-      alert('Please paste the shared data.');
+      alert('Please paste the exported data.');
       return;
     }
 
