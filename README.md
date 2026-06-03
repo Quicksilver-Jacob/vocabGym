@@ -22,6 +22,8 @@
 
 No `npm install`, no build tools, no server. Dependencies load from CDN (Tailwind CSS, SheetJS for Excel import).
 
+You can also go to https://quicksilver-jacob.github.io/vocabGym/ for online version.
+
 ## Usage
 
 ### Dictation Practice
